@@ -1,7 +1,7 @@
 [project]
 name = "file-system-analyzer"
 version = "0.1.0"
-description = "Add your description here"
+description = "Categorizes files by type, reports on size and permissions"
 readme = "README.md"
 authors = [
     { name = "Georgy Lepsaya", email = "georgelepsaya@gmail.com" }
