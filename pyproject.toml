@@ -7,7 +7,9 @@ authors = [
     { name = "Georgy Lepsaya", email = "georgelepsaya@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "python-magic>=0.4.27",
+]
 
 [build-system]
 requires = ["hatchling"]
