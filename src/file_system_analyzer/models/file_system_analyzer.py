@@ -10,14 +10,14 @@ class FileSystemAnalyzer:
         self.dir_path = dir_path
         self.threshold = threshold
         self.files_by_category = {
-            "text": [],
-            "image": [],
-            "audio": [],
-            "video": [],
-            "executable": [],
-            "document": [],
-            "empty": [],
-            "unknown": []
+            "text": {"size": 0, "files": []},
+            "image": {"size": 0, "files": []},
+            "audio": {"size": 0, "files": []},
+            "video": {"size": 0, "files": []},
+            "executable": {"size": 0, "files": []},
+            "document": {"size": 0, "files": []},
+            "empty": {"size": 0, "files": []},
+            "unknown": {"size": 0, "files": []}
         }
         self.large_files = []
         self.unusual_permissions_files = []
@@ -62,10 +62,12 @@ class FileSystemAnalyzer:
                 elif "empty" in magic_type:
                     inferred_type = "empty"
                 
-                self.files_by_category[inferred_type].append({
+                self.files_by_category[inferred_type]["files"].append({
                     "path": file_path,
                     "size": file_size,
                     "permissions": permissions})
+                
+                self.files_by_category[inferred_type]["size"] += file_size
             else:
                 self._traverse_directory(entry.path)
     
@@ -89,14 +91,3 @@ class FileSystemAnalyzer:
             }
         }
         return permissions
-    
-
-fsa = FileSystemAnalyzer("sandbox", 20000)
-
-fsa.categorize_files()
-
-pprint(fsa.files_by_category)
-
-pprint(fsa.large_files)
-
-pprint(fsa.unusual_permissions_files)
