@@ -1,67 +1,100 @@
+import logging
 import os
-import stat
-import magic
-from pprint import pprint
+from .utils import get_permissions, infer_file_type_magic, infer_file_type_extension
+
+try:
+    import magic
+except ImportError as e:
+    magic = None
+
+
+logger = logging.getLogger(__name__)
 
 
 class FileSystemAnalyzer:
-    
-    def __init__(self, dir_path, threshold):
-        self.dir_path = dir_path
-        self.threshold = threshold
-        self.files_by_category = {
+    """
+    Class for file system analysis.
+
+    Attributes:
+        dir_path : os.PathLike
+            Path to the directory to traverse and categorize
+        threshold : int
+            Threshold which determines which files are large
+        files_by_category : dict[str, dict]
+            Map of categories to their files and total size
+        large_files : list[os.PathLike]
+            List of paths of the large files
+        unusual_permissions_files : list[os.PathLike]
+            List of paths of files with unusual permissions
+
+    Methods:
+        categorize_files():
+            Calls directory traversal method on the provided dir_path
+        _traverse_directory(path: os.PathLike):
+            Recursively traverses the directory and stored necessary metadata
+    """
+    def __init__(self, dir_path: os.PathLike, threshold: int) -> None:
+        """
+        Constructs all necessary attributes for the FileSystemAnalyzer object
+        :param dir_path: os.PathLike
+            Path to the directory to traverse and categorize
+        :param threshold: int
+            Threshold which determines which files are large
+        """
+        self.dir_path: os.PathLike = dir_path
+        self.threshold: int = threshold
+        self.files_by_category: dict[str, dict] = {
             "text": {"size": 0, "files": []},
             "image": {"size": 0, "files": []},
             "audio": {"size": 0, "files": []},
             "video": {"size": 0, "files": []},
             "executable": {"size": 0, "files": []},
             "document": {"size": 0, "files": []},
-            "empty": {"size": 0, "files": []},
-            "unknown": {"size": 0, "files": []}
+            "archive": {"size": 0, "files": []},
+            "other": {"size": 0, "files": []}
         }
-        self.large_files = []
-        self.unusual_permissions_files = []
-    
+        self.large_files: list[os.PathLike] = []
+        self.unusual_permissions_files: list[os.PathLike] = []
+        self._magic_available = magic is not None
+        if not self._magic_available:
+            logger.info("File type inference by file signatures unavailable due to libmagic missing on the machine."
+                        "File extensions will be used to categorize files instead.")
 
-    def categorize_files(self):
+    def categorize_files(self) -> None:
+        """
+        Calls directory traversal method on the provided dir_path
+        :return: None
+        """
         self._traverse_directory(self.dir_path)
         
     
-    def _traverse_directory(self, path):
+    def _traverse_directory(self, path: os.PathLike) -> None:
+        """
+        Recursively traverses the directory and stored necessary metadata
+        :param path: os.PathLike
+        :return: None
+        """
         for entry in os.scandir(path):
             if entry.is_file():
-                file_metadata = entry.stat()
-                file_path = entry.path
-                permissions = self._get_permissions(file_metadata.st_mode)
-                file_size = file_metadata.st_size
-                
                 if entry.is_symlink():
                     continue
+
+                file_metadata = entry.stat()
+                file_path = entry.path
+                permissions = get_permissions(file_metadata.st_mode)
+                file_size = file_metadata.st_size
                 
                 if permissions['oth']['w']:
                     self.unusual_permissions_files.append(file_path)
                 
                 if file_size > self.threshold:
                     self.large_files.append(file_path)
-                
-                magic_type = magic.from_file(file_path)
 
-                inferred_type = "unknown"
-                if "text" in magic_type:
-                    inferred_type = "text"
-                elif "image" in magic_type:
-                    inferred_type = "image"
-                elif "audio" in magic_type:
-                    inferred_type = "audio"
-                elif "video" in magic_type:
-                    inferred_type = "video"
-                elif "executable" in magic_type:
-                    inferred_type = "executable"
-                elif "document" in magic_type:
-                    inferred_type = "document"
-                elif "empty" in magic_type:
-                    inferred_type = "empty"
-                
+                if self._magic_available is not None:
+                    inferred_type = infer_file_type_magic(file_path)
+                else:
+                    inferred_type = infer_file_type_extension(file_path)
+
                 self.files_by_category[inferred_type]["files"].append({
                     "path": file_path,
                     "size": file_size,
@@ -70,24 +103,3 @@ class FileSystemAnalyzer:
                 self.files_by_category[inferred_type]["size"] += file_size
             else:
                 self._traverse_directory(entry.path)
-    
-    
-    def _get_permissions(self, mode):
-        permissions = {
-            'usr': {
-                'r': bool(mode & stat.S_IRUSR),
-                'w': bool(mode & stat.S_IWUSR),
-                'x': bool(mode & stat.S_IXUSR)
-            },
-            'grp': {
-                'r': bool(mode & stat.S_IRGRP),
-                'w': bool(mode & stat.S_IWGRP),
-                'x': bool(mode & stat.S_IXGRP)
-            },
-            'oth': {
-                'r': bool(mode & stat.S_IROTH),
-                'w': bool(mode & stat.S_IWOTH),
-                'x': bool(mode & stat.S_IXOTH)
-            }
-        }
-        return permissions

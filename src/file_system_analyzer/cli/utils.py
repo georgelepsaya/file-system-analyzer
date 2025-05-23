@@ -1,11 +1,6 @@
-import argparse
-from file_system_analyzer.models.file_system_analyzer import FileSystemAnalyzer
-from pprint import pprint
 import math
-from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from rich.progress import Progress
 
 
 def create_table():
@@ -40,7 +35,7 @@ def parse_output(console, output, large_files):
     for file_type, files in output.items():
         size_total = convert_size(files['size'], include_bytes=True)
         category_text = f"{file_type.capitalize()} - {size_total}"
-        console.print(Panel(category_text, expand=False), style="medium_turquoise") 
+        console.print(Panel(category_text, expand=False), style="medium_turquoise")
         table = create_table()
         if files['files']:
             for file in files["files"]:
@@ -54,21 +49,4 @@ def parse_output(console, output, large_files):
             console.print(table)
         else:
             console.print("No files for this category")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--directory", help="directory to be analyzed")
-    parser.add_argument("-t", "--threshold", help="size threshold to identify large files", type=int)
-    args = parser.parse_args()
-    console = Console()
-    fsa = FileSystemAnalyzer(args.directory, args.threshold)
-    with console.status("[bold]Analyzing file system...[/bold]", spinner="dots"):
-        fsa.categorize_files()
-    # pprint(fsa.files_by_category)
-    parse_output(console, fsa.files_by_category, fsa.large_files)
-    # pprint(fsa.large_files)
-    # pprint(fsa.unusual_permissions_files)
-
-
 
