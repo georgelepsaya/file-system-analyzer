@@ -1,5 +1,16 @@
 from rich.table import Table
 from rich.panel import Panel
+import re
+
+
+SIZE_MULTIPLIERS = {
+    "B": 1,
+    "KiB": 1024,
+    "MiB": 1024 ** 2,
+    "GiB": 1024 ** 3,
+    "TiB": 1024 ** 4,
+    "PiB": 1024 ** 5
+}
 
 
 def create_table():
@@ -48,3 +59,11 @@ def parse_output(console, output, large_files, unusual_permissions_files):
         for i, (k, v) in enumerate(unusual_permissions_files.items(), start=1):
             console.print(f"{i}. {k}: [red]{", ".join(v)}[/red]", highlight=False)
 
+
+def convert_to_bytes(size_str: str) -> int:
+    size_match = re.match(r'^(\d+)(B|KiB|MiB|GiB|TiB|PiB)?$', size_str)
+    if not size_match:
+        raise ValueError(f"Invalid size format: {size_str}")
+    number, unit = size_match.groups()
+    unit = unit or 'B'
+    return int(number) * SIZE_MULTIPLIERS[unit]
