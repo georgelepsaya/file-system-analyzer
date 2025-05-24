@@ -1,4 +1,3 @@
-import logging
 import os
 from .utils import get_permissions, infer_file_type_magic, infer_file_type_extension
 
@@ -6,9 +5,6 @@ try:
     import magic
 except ImportError as e:
     magic = None
-
-
-logger = logging.getLogger(__name__)
 
 
 class FileSystemAnalyzer:
@@ -57,7 +53,7 @@ class FileSystemAnalyzer:
         self.unusual_permissions_files: list[os.PathLike] = []
         self._magic_available = magic is not None
         if not self._magic_available:
-            logger.info("File type inference by file signatures unavailable due to libmagic missing on the machine."
+            print("File type inference by file signatures unavailable due to libmagic missing on the machine."
                         "File extensions will be used to categorize files instead.")
 
     def categorize_files(self) -> None:

@@ -1,6 +1,8 @@
 import stat
 import os
-from .file_type_mappings import APPLICATION_MIME_TO_CATEGORY, EXTENSION_TO_CATEGORY
+
+from .file_type_mappings import APPLICATION_MIME_TO_CATEGORY, EXTENSION_TO_CATEGORY, TERM_PATTERN, MIME_TERM_TO_CATEGORY
+
 
 # Handle the case when libmagic is not installed on a Linux machine
 try:
@@ -48,28 +50,35 @@ def infer_file_type_magic(file_path: os.PathLike) -> str:
     """
     magic_type = magic.from_file(file_path, mime=True).split('/')
     if magic_type[0] == "text":
-        inferred_type = "text"
+        return "text"
     elif magic_type[0] == "image":
-        inferred_type = "image"
+        return "image"
     elif magic_type[0] == "audio":
-        inferred_type = "audio"
+        return "audio"
     elif magic_type[0] == "video":
-        inferred_type = "video"
+        return "video"
     elif magic_type[0] == "application":
         mime_type = "/".join(magic_type)
         if mime_type in APPLICATION_MIME_TO_CATEGORY:
-            inferred_type = APPLICATION_MIME_TO_CATEGORY[mime_type]
+            return APPLICATION_MIME_TO_CATEGORY[mime_type]
         else:
-            # TODO: fall back to pattern matching with magic mime=False
-            inferred_type = infer_file_type_extension(file_path)
-    else:
-        inferred_type = "other"
-    return inferred_type
+            inferred_type = infer_file_type_magic_raw(file_path)
+            if inferred_type == "other":
+                return infer_file_type_extension(file_path)
+            return inferred_type
+    return "other"
+
+
+def infer_file_type_magic_raw(file_path: os.PathLike) -> str:
+    magic_type_raw = magic.from_file(file_path)
+    matched_term = TERM_PATTERN.search(magic_type_raw)
+    if matched_term:
+        return MIME_TERM_TO_CATEGORY[matched_term.group(0).lower()]
+    return "other"
 
 
 def infer_file_type_extension(file_path: os.PathLike) -> str:
-    inferred_type = "other"
     file_ext = os.path.splitext(file_path)[1]
     if file_ext in EXTENSION_TO_CATEGORY:
-        inferred_type = EXTENSION_TO_CATEGORY[file_ext]
-    return inferred_type
+        return EXTENSION_TO_CATEGORY[file_ext]
+    return "other"
