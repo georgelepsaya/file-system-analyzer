@@ -73,7 +73,7 @@ def infer_file_type_magic_raw(file_path: os.PathLike) -> str:
     magic_type_raw = magic.from_file(file_path)
     matched_term = TERM_PATTERN.search(magic_type_raw)
     if matched_term:
-        return MIME_TERM_TO_CATEGORY[matched_term.group(0).lower()]
+        return TERM_TO_CATEGORY[matched_term.group(0).lower()]
     return "other"
 
 

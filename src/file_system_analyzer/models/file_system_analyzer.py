@@ -16,16 +16,24 @@ class FileSystemAnalyzer:
             Path to the directory to traverse and categorize
         threshold : int
             Threshold which determines which files are large
-        files_by_category : dict[str, dict]
+        _files_by_category : dict[str, dict]
             Map of categories to their files and total size
-        large_files : list[os.PathLike]
+        _large_files : list[os.PathLike]
             List of paths of the large files
-        unusual_permissions_files : list[os.PathLike]
+        _unusual_permissions_files : list[os.PathLike]
             List of paths of files with unusual permissions
+        _magic_available: bool
+            True if magic was imported successfully, otherwise false
 
     Methods:
         categorize_files():
             Calls directory traversal method on the provided dir_path
+        get_files_by_category():
+            Getter for _files_by_category
+        get_large_files():
+            Getter for _large_files
+        get_unusual_permissions_files():
+            Getter for _unusual_permissions_files
         _traverse_directory(path: os.PathLike):
             Recursively traverses the directory and stored necessary metadata
     """
@@ -39,7 +47,7 @@ class FileSystemAnalyzer:
         """
         self.dir_path: os.PathLike = dir_path
         self.threshold: int = threshold
-        self.files_by_category: dict[str, dict] = {
+        self._files_by_category: dict[str, dict] = {
             "text": {"size": 0, "files": []},
             "image": {"size": 0, "files": []},
             "audio": {"size": 0, "files": []},
@@ -51,8 +59,8 @@ class FileSystemAnalyzer:
             "archive": {"size": 0, "files": []},
             "other": {"size": 0, "files": []}
         }
-        self.large_files: list[os.PathLike] = []
-        self.unusual_permissions_files: list[os.PathLike] = []
+        self._large_files: list[tuple[os.PathLike, int]] = []
+        self._unusual_permissions_files: list[tuple[os.PathLike, str]] = []
         self._magic_available = magic is not None
         if not self._magic_available:
             print("File type inference by file signatures unavailable due to libmagic missing on the machine."
@@ -64,8 +72,16 @@ class FileSystemAnalyzer:
         :return: None
         """
         self._traverse_directory(self.dir_path)
-        
-    
+
+    def get_files_by_category(self):
+        return self._files_by_category
+
+    def get_large_files(self):
+        return self._large_files
+
+    def get_unusual_permissions_files(self):
+        return self._unusual_permissions_files
+
     def _traverse_directory(self, path: os.PathLike) -> None:
         """
         Recursively traverses the directory and stored necessary metadata
@@ -83,21 +99,21 @@ class FileSystemAnalyzer:
                 file_size = file_metadata.st_size
                 
                 if permissions['oth']['w']:
-                    self.unusual_permissions_files.append(file_path)
+                    self._unusual_permissions_files.append(file_path)
                 
                 if file_size > self.threshold:
-                    self.large_files.append(file_path)
+                    self._large_files.append(file_path)
 
                 if self._magic_available is not None:
                     inferred_type = infer_file_type_magic(file_path)
                 else:
                     inferred_type = infer_file_type_extension(file_path)
 
-                self.files_by_category[inferred_type]["files"].append({
+                self._files_by_category[inferred_type]["files"].append({
                     "path": file_path,
                     "size": file_size,
                     "permissions": permissions})
                 
-                self.files_by_category[inferred_type]["size"] += file_size
+                self._files_by_category[inferred_type]["size"] += file_size
             else:
                 self._traverse_directory(entry.path)
