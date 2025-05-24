@@ -1,6 +1,6 @@
 import stat
 import os
-
+import math
 from .file_type_mappings import APPLICATION_MIME_TO_CATEGORY, EXTENSION_TO_CATEGORY, TERM_PATTERN, TERM_TO_CATEGORY
 
 
@@ -82,3 +82,44 @@ def infer_file_type_extension(file_path: os.PathLike) -> str:
     if file_ext in EXTENSION_TO_CATEGORY:
         return EXTENSION_TO_CATEGORY[file_ext]
     return "other"
+
+
+def convert_size(file_size: int, include_bytes=False):
+    if file_size < 0:
+        raise ValueError("file size must not be negative")
+    if file_size == 0:
+        return "0B"
+    base = 1024
+    size_units = ("B", "KiB", "MiB", "GiB", "TiB", "PiB")
+    unit_index = min(int(math.floor(math.log(file_size, base))), len(size_units) - 1)
+    divisor = base ** unit_index
+    converted_size = file_size / divisor
+
+    if converted_size.is_integer():
+        converted_size = int(converted_size)
+    else:
+        converted_size = round(converted_size, 2)
+
+    result = f"{converted_size} {size_units[unit_index]}"
+    if include_bytes:
+        result += f" ({file_size} Bytes)"
+    return result
+
+
+def detect_unusual_permissions(mode) -> list[str]:
+    unusual_permissions = []
+    if mode & stat.S_IWOTH:
+        unusual_permissions.append("world-writable")
+    if mode & stat.S_IWGRP:
+        unusual_permissions.append("group-writable")
+    if mode & stat.S_IXOTH:
+        unusual_permissions.append("world-executable")
+    if mode & stat.S_IXGRP:
+        unusual_permissions.append("group-executable")
+    if mode & stat.S_ISUID:
+        unusual_permissions.append("set-uid")
+    if mode & stat.S_ISGID:
+        unusual_permissions.append("set-gid")
+    if mode & stat.S_ISVTX:
+        unusual_permissions.append("sticky-bit")
+    return unusual_permissions

@@ -12,3 +12,4 @@ wheels/
 # Other
 sandbox/
 .idea/
+.DS_Store

@@ -1,5 +1,6 @@
 import os
-from .utils import get_permissions, infer_file_type_magic, infer_file_type_extension
+from collections import defaultdict
+from .utils import get_permissions, infer_file_type_magic, infer_file_type_extension, detect_unusual_permissions, convert_size
 
 try:
     import magic
@@ -48,19 +49,19 @@ class FileSystemAnalyzer:
         self.dir_path: os.PathLike = dir_path
         self.threshold: int = threshold
         self._files_by_category: dict[str, dict] = {
-            "text": {"size": 0, "files": []},
-            "image": {"size": 0, "files": []},
-            "audio": {"size": 0, "files": []},
-            "video": {"size": 0, "files": []},
-            "document": {"size": 0, "files": []},
-            "presentation": {"size": 0, "files": []},
-            "spreadsheet": {"size": 0, "files": []},
-            "executable": {"size": 0, "files": []},
-            "archive": {"size": 0, "files": []},
-            "other": {"size": 0, "files": []}
+            "text": {"size": 0, "converted_size": "", "files": []},
+            "image": {"size": 0, "converted_size": "", "files": []},
+            "audio": {"size": 0, "converted_size": "", "files": []},
+            "video": {"size": 0, "converted_size": "", "files": []},
+            "document": {"size": 0, "converted_size": "", "files": []},
+            "presentation": {"size": 0, "converted_size": "", "files": []},
+            "spreadsheet": {"size": 0, "converted_size": "", "files": []},
+            "executable": {"size": 0, "converted_size": "", "files": []},
+            "archive": {"size": 0, "converted_size": "", "files": []},
+            "other": {"size": 0, "converted_size": "", "files": []}
         }
-        self._large_files: list[tuple[os.PathLike, int]] = []
-        self._unusual_permissions_files: list[tuple[os.PathLike, str]] = []
+        self._large_files = defaultdict(str)
+        self._unusual_permissions_files = defaultdict(list)
         self._magic_available = magic is not None
         if not self._magic_available:
             print("File type inference by file signatures unavailable due to libmagic missing on the machine."
@@ -72,6 +73,8 @@ class FileSystemAnalyzer:
         :return: None
         """
         self._traverse_directory(self.dir_path)
+        for v in self._files_by_category.values():
+            v['converted_size'] = convert_size(v['size'], include_bytes=True)
 
     def get_files_by_category(self):
         return self._files_by_category
@@ -96,13 +99,16 @@ class FileSystemAnalyzer:
                 file_metadata = entry.stat()
                 file_path = entry.path
                 permissions = get_permissions(file_metadata.st_mode)
+
                 file_size = file_metadata.st_size
-                
-                if permissions['oth']['w']:
-                    self._unusual_permissions_files.append(file_path)
+                converted_file_size = convert_size(file_size)
+
+                unusual_permissions = detect_unusual_permissions(file_metadata.st_mode)
+                if unusual_permissions:
+                    self._unusual_permissions_files[file_path] = unusual_permissions
                 
                 if file_size > self.threshold:
-                    self._large_files.append(file_path)
+                    self._large_files[file_path] = converted_file_size
 
                 if self._magic_available is not None:
                     inferred_type = infer_file_type_magic(file_path)
@@ -111,9 +117,9 @@ class FileSystemAnalyzer:
 
                 self._files_by_category[inferred_type]["files"].append({
                     "path": file_path,
-                    "size": file_size,
+                    "size": converted_file_size,
                     "permissions": permissions})
                 
-                self._files_by_category[inferred_type]["size"] += file_size
+                self._files_by_category[inferred_type]["size"] += file_metadata.st_size
             else:
                 self._traverse_directory(entry.path)
