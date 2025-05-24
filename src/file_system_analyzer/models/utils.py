@@ -84,7 +84,7 @@ def infer_file_type_extension(file_path: os.PathLike) -> str:
     return "other"
 
 
-def convert_size(file_size: int, include_bytes=False):
+def convert_size(file_size: int):
     if file_size < 0:
         raise ValueError("file size must not be negative")
     if file_size == 0:
@@ -100,10 +100,7 @@ def convert_size(file_size: int, include_bytes=False):
     else:
         converted_size = round(converted_size, 2)
 
-    result = f"{converted_size} {size_units[unit_index]}"
-    if include_bytes:
-        result += f" ({file_size} Bytes)"
-    return result
+    return f"{converted_size} {size_units[unit_index]}"
 
 
 def detect_unusual_permissions(mode) -> list[str]:

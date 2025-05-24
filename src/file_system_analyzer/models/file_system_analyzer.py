@@ -1,11 +1,43 @@
 import os
 from collections import defaultdict
+from dataclasses import dataclass, field
+
 from .utils import get_permissions, infer_file_type_magic, infer_file_type_extension, detect_unusual_permissions, convert_size
 
 try:
     import magic
 except ImportError as e:
     magic = None
+
+
+@dataclass
+class FileMetadata:
+    path: os.PathLike
+    size: int
+    permissions: int
+
+    @property
+    def processed_permissions(self) -> dict:
+        return get_permissions(self.permissions)
+
+    @property
+    def unusual_permissions(self) -> list[str]:
+        return detect_unusual_permissions(self.permissions)
+
+    @property
+    def converted_size(self) -> str:
+        return convert_size(self.size)
+
+
+@dataclass
+class CategoryFiles:
+    size: int = 0
+    files: list[FileMetadata] = field(default_factory=list)
+
+    @property
+    def converted_size(self) -> str:
+        return convert_size(self.size)
+
 
 
 class FileSystemAnalyzer:
@@ -48,18 +80,7 @@ class FileSystemAnalyzer:
         """
         self.dir_path: os.PathLike = dir_path
         self.threshold: int = threshold
-        self._files_by_category: dict[str, dict] = {
-            "text": {"size": 0, "converted_size": "", "files": []},
-            "image": {"size": 0, "converted_size": "", "files": []},
-            "audio": {"size": 0, "converted_size": "", "files": []},
-            "video": {"size": 0, "converted_size": "", "files": []},
-            "document": {"size": 0, "converted_size": "", "files": []},
-            "presentation": {"size": 0, "converted_size": "", "files": []},
-            "spreadsheet": {"size": 0, "converted_size": "", "files": []},
-            "executable": {"size": 0, "converted_size": "", "files": []},
-            "archive": {"size": 0, "converted_size": "", "files": []},
-            "other": {"size": 0, "converted_size": "", "files": []}
-        }
+        self._files_by_category = defaultdict(CategoryFiles)
         self._large_files = defaultdict(str)
         self._unusual_permissions_files = defaultdict(list)
         self._magic_available = magic is not None
@@ -73,16 +94,17 @@ class FileSystemAnalyzer:
         :return: None
         """
         self._traverse_directory(self.dir_path)
-        for v in self._files_by_category.values():
-            v['converted_size'] = convert_size(v['size'], include_bytes=True)
 
-    def get_files_by_category(self):
+    @property
+    def files_by_category(self):
         return self._files_by_category
 
-    def get_large_files(self):
+    @property
+    def large_files(self):
         return self._large_files
 
-    def get_unusual_permissions_files(self):
+    @property
+    def unusual_permissions_files(self):
         return self._unusual_permissions_files
 
     def _traverse_directory(self, path: os.PathLike) -> None:
@@ -96,30 +118,25 @@ class FileSystemAnalyzer:
                 if entry.is_symlink():
                     continue
 
-                file_metadata = entry.stat()
                 file_path = entry.path
-                permissions = get_permissions(file_metadata.st_mode)
-
+                file_metadata = entry.stat()
                 file_size = file_metadata.st_size
-                converted_file_size = convert_size(file_size)
+                file_mode = file_metadata.st_mode
 
-                unusual_permissions = detect_unusual_permissions(file_metadata.st_mode)
-                if unusual_permissions:
-                    self._unusual_permissions_files[file_path] = unusual_permissions
-                
-                if file_size > self.threshold:
-                    self._large_files[file_path] = converted_file_size
+                file = FileMetadata(file_path, file_size, file_mode)
+
+                if file.unusual_permissions:
+                    self._unusual_permissions_files[file_path] = file.unusual_permissions
+
+                if file.size > self.threshold:
+                    self._large_files[file_path] = file.converted_size
 
                 if self._magic_available is not None:
                     inferred_type = infer_file_type_magic(file_path)
                 else:
                     inferred_type = infer_file_type_extension(file_path)
 
-                self._files_by_category[inferred_type]["files"].append({
-                    "path": file_path,
-                    "size": converted_file_size,
-                    "permissions": permissions})
-                
-                self._files_by_category[inferred_type]["size"] += file_metadata.st_size
+                self._files_by_category[inferred_type].files.append(file)
+                self._files_by_category[inferred_type].size += file_metadata.st_size
             else:
                 self._traverse_directory(entry.path)

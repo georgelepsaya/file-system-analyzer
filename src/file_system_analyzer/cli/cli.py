@@ -30,7 +30,7 @@ def main():
     console = Console()
     with console.status("[bold]Categorizing files...[/bold]", spinner="dots"):
         fsa.categorize_files()
-    parse_output(console, fsa.get_files_by_category(), fsa.get_large_files(), fsa.get_unusual_permissions_files())
+    parse_output(console, fsa.files_by_category, fsa.large_files, fsa.unusual_permissions_files)
 
 
 

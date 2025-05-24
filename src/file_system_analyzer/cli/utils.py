@@ -33,19 +33,19 @@ def parse_permissions(permissions, is_unusual):
 
 def parse_output(console, output, large_files, unusual_permissions_files):
     for file_type, files in output.items():
-        if len(files['files']) == 0:
+        if len(files.files) == 0:
             continue
-        category_text = f"{file_type.capitalize()} - {files['converted_size']}"
+        category_text = f"{file_type.capitalize()} - {files.converted_size}"
         console.print(Panel(category_text, expand=True), style="medium_turquoise")
         table = create_table()
-        if files['files']:
-            for file in files["files"]:
-                size_text = f"[dim]{file['size']}[/dim]"
-                if file['path'] in large_files:
-                    path_text = f"[light_salmon3]{file['path']} (large file)[/light_salmon3]"
+        if files.files:
+            for file in files.files:
+                size_text = f"[dim]{file.converted_size}[/dim]"
+                if file.path in large_files:
+                    path_text = f"[light_salmon3]{file.path} (large file)[/light_salmon3]"
                 else:
-                    path_text = f"{file['path']}"
-                permissions = parse_permissions(file['permissions'], file['path'] in unusual_permissions_files)
+                    path_text = f"{file.path}"
+                permissions = parse_permissions(file.processed_permissions, file.path in unusual_permissions_files)
                 table.add_row(size_text, path_text, permissions)
             console.print(table)
         else:
