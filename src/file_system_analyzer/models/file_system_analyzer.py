@@ -1,13 +1,25 @@
 import os
+import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
+from typing import List, Dict
 
-from .utils import get_permissions, infer_file_type_magic, infer_file_type_extension, detect_unusual_permissions, convert_size
+from .utils import (
+    get_permissions,
+    infer_file_type_magic,
+    infer_file_type_extension,
+    detect_unusual_permissions,
+    convert_size,
+)
 
 try:
     import magic
-except ImportError as e:
+except ImportError:
     magic = None
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("file_system_analyzer")
 
 
 @dataclass
@@ -17,11 +29,11 @@ class FileMetadata:
     permissions: int
 
     @property
-    def processed_permissions(self) -> dict:
+    def processed_permissions(self) -> Dict:
         return get_permissions(self.permissions)
 
     @property
-    def unusual_permissions(self) -> list[str]:
+    def unusual_permissions(self) -> List[str]:
         return detect_unusual_permissions(self.permissions)
 
     @property
@@ -32,12 +44,11 @@ class FileMetadata:
 @dataclass
 class CategoryFiles:
     size: int = 0
-    files: list[FileMetadata] = field(default_factory=list)
+    files: List[FileMetadata] = field(default_factory=list)
 
     @property
     def converted_size(self) -> str:
         return convert_size(self.size)
-
 
 
 class FileSystemAnalyzer:
@@ -81,11 +92,11 @@ class FileSystemAnalyzer:
         self.dir_path: os.PathLike = dir_path
         self.threshold: int = threshold
         self._files_by_category = defaultdict(CategoryFiles)
-        self._large_files = defaultdict(str)
-        self._unusual_permissions_files = defaultdict(list)
+        self._large_files = {}
+        self._unusual_permissions_files = {}
         self._magic_available = magic is not None
         if not self._magic_available:
-            print("File type inference by file signatures unavailable due to libmagic missing on the machine."
+            logger.warning("File type inference by file signatures unavailable due to libmagic missing on the machine."
                         "File extensions will be used to categorize files instead.")
 
     def categorize_files(self) -> None:
@@ -113,30 +124,35 @@ class FileSystemAnalyzer:
         :param path: os.PathLike
         :return: None
         """
-        for entry in os.scandir(path):
-            if entry.is_file():
-                if entry.is_symlink():
-                    continue
+        try:
+            for entry in os.scandir(path):
+                if entry.is_file():
+                    if entry.is_symlink():
+                        continue
 
-                file_path = entry.path
-                file_metadata = entry.stat()
-                file_size = file_metadata.st_size
-                file_mode = file_metadata.st_mode
+                    file_path = entry.path
+                    file_metadata = entry.stat()
+                    file_size = file_metadata.st_size
+                    file_mode = file_metadata.st_mode
 
-                file = FileMetadata(file_path, file_size, file_mode)
+                    file = FileMetadata(file_path, file_size, file_mode)
 
-                if file.unusual_permissions:
-                    self._unusual_permissions_files[file_path] = file.unusual_permissions
+                    if file.unusual_permissions:
+                        self._unusual_permissions_files[file_path] = file.unusual_permissions
 
-                if file.size > self.threshold:
-                    self._large_files[file_path] = file.converted_size
+                    if file.size > self.threshold:
+                        self._large_files[file_path] = file.converted_size
 
-                if self._magic_available is not None:
-                    inferred_type = infer_file_type_magic(file_path)
+                    if self._magic_available:
+                        inferred_type = infer_file_type_magic(file_path)
+                    else:
+                        inferred_type = infer_file_type_extension(file_path)
+
+                    self._files_by_category[inferred_type].files.append(file)
+                    self._files_by_category[inferred_type].size += file_size
                 else:
-                    inferred_type = infer_file_type_extension(file_path)
-
-                self._files_by_category[inferred_type].files.append(file)
-                self._files_by_category[inferred_type].size += file_metadata.st_size
-            else:
-                self._traverse_directory(entry.path)
+                    self._traverse_directory(entry.path)
+        except PermissionError as pe:
+            logger.error(f"Permission denied when traversing directory: {pe}")
+        except Exception as e:
+            logger.error(f"Error occurred when traversing the directory: {e}")
