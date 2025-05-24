@@ -1,7 +1,7 @@
 import stat
 import os
 
-from .file_type_mappings import APPLICATION_MIME_TO_CATEGORY, EXTENSION_TO_CATEGORY, TERM_PATTERN, MIME_TERM_TO_CATEGORY
+from .file_type_mappings import APPLICATION_MIME_TO_CATEGORY, EXTENSION_TO_CATEGORY, TERM_PATTERN, TERM_TO_CATEGORY
 
 
 # Handle the case when libmagic is not installed on a Linux machine

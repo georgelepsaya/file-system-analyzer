@@ -44,8 +44,10 @@ class FileSystemAnalyzer:
             "image": {"size": 0, "files": []},
             "audio": {"size": 0, "files": []},
             "video": {"size": 0, "files": []},
-            "executable": {"size": 0, "files": []},
             "document": {"size": 0, "files": []},
+            "presentation": {"size": 0, "files": []},
+            "spreadsheet": {"size": 0, "files": []},
+            "executable": {"size": 0, "files": []},
             "archive": {"size": 0, "files": []},
             "other": {"size": 0, "files": []}
         }
