@@ -23,6 +23,3 @@ def test_fsa_correct_args(tmp_path):
                              stdout=subprocess.PIPE)
     assert process.returncode == 0
     assert "FILE SYSTEM ANALYSIS REPORT" in process.stdout, "fsa run was supposed to be successful"
-
-def test_integration():
-    pass
