@@ -16,6 +16,26 @@ SIZE_MULTIPLIERS = {
 }
 
 
+def validate_permissions(permissions: Dict):
+    expected_structure = {
+        'usr': {'r': bool, 'w': bool, 'x': bool},
+        'grp': {'r': bool, 'w': bool, 'x': bool},
+        'oth': {'r': bool, 'w': bool, 'x': bool}
+    }
+
+    if set(permissions.keys()) != set(expected_structure.keys()):
+        return False
+
+    for category in expected_structure:
+        for permission in expected_structure[category]:
+            if permission not in permissions[category]:
+                return False
+            if not isinstance(permissions[category][permission], bool):
+                return False
+
+    return True
+
+
 def create_table() -> Table:
     table = Table()
     table.add_column("Size", justify="left", no_wrap=True, header_style="bold blue")
@@ -28,11 +48,13 @@ def parse_permissions(permissions: Dict, is_unusual: bool) -> str:
     try:
         if not isinstance(permissions, dict):
             raise ValueError("permissions must be a dictionary")
+        if not validate_permissions(permissions):
+            raise ValueError("permissions dictionary structure is incorrect")
         permissions_text = ""
         for cat, rights in permissions.items():
             if not isinstance(rights, dict):
                 raise ValueError(f"rights for category {cat} must be a dictionary")
-            permissions_text += f"{cat}: {''.join([k for k,v in rights.items() if v])} "
+            permissions_text += f"{cat}:{''.join([k for k,v in rights.items() if v])} "
         permissions_text.format(permissions_text)
         if is_unusual:
             return f"[red]{permissions_text}(unusual permissions)[/red]"

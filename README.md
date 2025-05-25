@@ -1,6 +1,6 @@
 # File System Analyzer
 
-![Tests are passing](https://github.com/georgelepsaya/file-system-analyzer/actions/workflows/tests.yaml/badge.svg)
+![CI](https://github.com/georgelepsaya/file-system-analyzer/actions/workflows/tests.yaml/badge.svg)
 
 ## Motivation for chosen tools and approach
 
