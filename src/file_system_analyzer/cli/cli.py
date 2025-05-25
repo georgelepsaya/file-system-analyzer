@@ -38,6 +38,7 @@ def main():
             logger.error(f"Error when categorizing files: {e}")
             sys.exit(1)
 
+    console.print("FILE SYSTEM ANALYSIS REPORT", style="bold italic", justify="center")
     parse_output(console, fsa.files_by_category, fsa.large_files, fsa.unusual_permissions_files)
 
 if __name__ == "__main__":
