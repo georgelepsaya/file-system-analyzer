@@ -133,7 +133,7 @@ def convert_size(file_size: int) -> str:
         if file_size < 0:
             raise ValueError("file size must not be negative")
         if file_size == 0:
-            return "0B"
+            return "0 B"
         base = 1024
         size_units = ("B", "KiB", "MiB", "GiB", "TiB", "PiB")
         unit_index = min(int(math.floor(math.log(file_size, base))), len(size_units) - 1)

@@ -1,7 +1,6 @@
 # File System Analyzer
 
 ![CI](https://github.com/georgelepsaya/file-system-analyzer/actions/workflows/tests.yaml/badge.svg) 
-[![cov](https://georgelepsaya.github.io/file-system-analyzer/badges/coverage.svg)](https://github.com/georgelepsaya/file-system-analyzer/actions)
 
 ## Motivation for chosen tools and approach
 
