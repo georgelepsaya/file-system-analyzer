@@ -13,3 +13,4 @@ wheels/
 sandbox/
 .idea/
 .DS_Store
+.tox
