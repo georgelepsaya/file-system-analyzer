@@ -17,7 +17,9 @@ a `requirements.txt` file, so you can run this project without using `uv`.
 + Create a virtual environment: `python3 -m venv .venv`
 + Activate the virtual environment: `. .venv/bin/activate`
 + Install the project in editable mode: `pip install -e .`
-+ Run the tool: `fsa -h`
++ Run the tool
+  - To get help: `fsa -h`
+  - Example: `fsa -d your_dir -t 5MiB`
 
 ## Using `uv` (good for contributing)
 
