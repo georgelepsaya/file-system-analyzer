@@ -69,10 +69,11 @@ The tool categorizes files into the following categories:
 
 It performs the categorization this way:
 
-+ First it tries to use `libmagic` to get a MIME format file type based on file signatures. If the top-level category is text, audio, video or
-image, then it simply puts the file in that category. If however the type is `application`, then...
++ First it tries to use `libmagic` to get a MIME format file type based on file signatures. If the top-level category 
+is `text`, `audio`, `video` or `image`, then it simply puts the file in that category. If however the type is
+`application`, then...
 + The tool uses a mapping from some application MIME types to file categories. If mapping is unsuccessful...
-+ Tool tried to match the raw `libmagic` description to a predefined regex pattern compiled from possible terms. If
++ Tool tries to match the raw `libmagic` description to a predefined regex pattern compiled from possible terms. If
 a match is found, a category is returned. Otherwise...
 + Tool falls back to categorization based on file extension using a defined mapping.
 
@@ -81,7 +82,7 @@ and categorization will be performed only based on file extensions.
 
 ## CLI
 
-Users can provide threshold size in B, KiB, MiB, GiB, TiB or PiB (no unit is specified size assumed to be in B). 
+Users can provide threshold size in B, KiB, MiB, GiB, TiB or PiB (if no unit is specified, size is assumed to be in B). 
 Sizes will be converted to bytes, since bytes are the primary unit in the tool. Analyzer does necessary conversions
 of output size values when printing them back to users.
 
@@ -98,7 +99,7 @@ To detect unusual permissions, the tool identifies the following masks:
 
 # Continuous integration
 
-I used GitHub actions for an automated testing pipeline. It is set up to test on the latest Ubuntu version and the
+I used GitHub actions for the automated testing pipeline. It is set up to test on the latest Ubuntu version and the
 latest macOS version. And for each OS, it tests for three python versions: 3.11, 3.12 and 3.13. Tests are run on every 
 push and every PR.
 
