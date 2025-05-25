@@ -1,5 +1,4 @@
 coverage==7.8.2
--e file:///Users/georgelepsaya/PycharmProjects/file-system-analyzer
 iniconfig==2.1.0
 markdown-it-py==3.0.0
 mdurl==0.1.2
