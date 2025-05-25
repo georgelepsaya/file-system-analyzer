@@ -2,6 +2,8 @@
 
 ![CI](https://github.com/georgelepsaya/file-system-analyzer/actions/workflows/tests.yaml/badge.svg) 
 
+![Demo of the tool](docs/demo.gif)
+
 ## Motivation for chosen tools and approach
 
 1. **uv** for project and package management.
