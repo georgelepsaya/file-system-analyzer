@@ -1,0 +1,12 @@
+coverage==7.8.2
+-e file:///Users/georgelepsaya/PycharmProjects/file-system-analyzer
+iniconfig==2.1.0
+markdown-it-py==3.0.0
+mdurl==0.1.2
+packaging==25.0
+pluggy==1.6.0
+pygments==2.19.1
+pytest==8.3.5
+pytest-cov==6.1.1
+python-magic==0.4.27
+rich==14.0.0
