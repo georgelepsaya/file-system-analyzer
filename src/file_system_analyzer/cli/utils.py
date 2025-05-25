@@ -32,7 +32,7 @@ def parse_permissions(permissions: Dict, is_unusual: bool) -> str:
         for cat, rights in permissions.items():
             if not isinstance(rights, dict):
                 raise ValueError(f"rights for category {cat} must be a dictionary")
-            permissions_text += f"{cat}: {"".join([k for k,v in rights.items() if v])} "
+            permissions_text += f"{cat}: {''.join([k for k,v in rights.items() if v])} "
         permissions_text.format(permissions_text)
         if is_unusual:
             return f"[red]{permissions_text}(unusual permissions)[/red]"
@@ -80,7 +80,7 @@ def parse_output(console, output: Dict, large_files: Dict, unusual_permissions_f
         if unusual_permissions_files:
             console.print(Panel("Files with unusual permissions", expand=True), style="red")
             for i, (k, v) in enumerate(unusual_permissions_files.items(), start=1):
-                console.print(f"{i}. {k}: [red]{", ".join(v)}[/red]", highlight=False)
+                console.print(f"{i}. {k}: [red]{', '.join(v)}[/red]", highlight=False)
     except ValueError as ve:
         logger.error(f"Value error when parsing output: {ve}")
         raise

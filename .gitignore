@@ -13,4 +13,5 @@ wheels/
 sandbox/
 .idea/
 .DS_Store
-.tox
+.pytest_cache
+.test_dir/
