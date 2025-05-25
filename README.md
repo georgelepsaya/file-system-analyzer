@@ -9,22 +9,23 @@
 I have developed this project as a library using `uv` as a project and a package manager. However I have also maintained
 a `requirements.txt` file, so you can run this project without using `uv`.
 
-1. Clone the repo: `git clone https://github.com/georgelepsaya/file-system-analyzer.git`.
-2. `cd file-system-analyzer`
++ Clone the repo: `git clone https://github.com/georgelepsaya/file-system-analyzer.git`.
++ `cd file-system-analyzer`
 
 ## Simply using `requirements.txt` (good for demo)
 
-1. Create a virtual environment: `python3 -m venv .venv`
-2. Install the project in editable mode: `pip install -e .`
-3. Run the tool: `fsa -h`
++ Create a virtual environment: `python3 -m venv .venv`
++ Activate the virtual environment: `. .venv/bin/activate`
++ Install the project in editable mode: `pip install -e .`
++ Run the tool: `fsa -h`
 
 ## Using `uv` (good for contributing)
 
-1. Install `uv` if it isn't installed already, e.g. `curl -LsSf https://astral.sh/uv/install.sh | sh`
-2. Install dependencies:
++ Install `uv` if it isn't installed already, e.g. `curl -LsSf https://astral.sh/uv/install.sh | sh`
++ Install dependencies:
    - All dependencies: `uv sync`
    - Excluding dev dependencies: `uv sync --no-dev`. This will skip `pytest` and `pytest-cov` installation
-3. Run the tool
++ Run the tool
    - If virtual environment isn't activated: `uv run fsa -h`
    - If it's activated: `fsa -h`
 
@@ -68,12 +69,12 @@ The tool categorizes files into the following categories:
 
 It performs the categorization this way:
 
-1. First it tries to use `libmagic` to get a MIME format file type based on file signatures. If the top-level category is text, audio, video or
++ First it tries to use `libmagic` to get a MIME format file type based on file signatures. If the top-level category is text, audio, video or
 image, then it simply puts the file in that category. If however the type is `application`, then...
-2. The tool uses a mapping from some application MIME types to file categories. If mapping is unsuccessful...
-3. Tool tried to match the raw `libmagic` description to a predefined regex pattern compiled from possible terms. If
++ The tool uses a mapping from some application MIME types to file categories. If mapping is unsuccessful...
++ Tool tried to match the raw `libmagic` description to a predefined regex pattern compiled from possible terms. If
 a match is found, a category is returned. Otherwise...
-4. Tool falls back to categorization based on file extension.
++ Tool falls back to categorization based on file extension using a defined mapping.
 
 In case `libmagic` is not present on the user's machine, they can still run the tool, `python-magic` will not be used
 and categorization will be performed only based on file extensions.
@@ -94,4 +95,10 @@ To detect unusual permissions, the tool identifies the following masks:
 - Setuid
 - Setgid
 - Sticky bit
+
+# Continuous integration
+
+I used GitHub actions for an automated testing pipeline. It is set up to test on the latest Ubuntu version and the
+latest macOS version. And for each OS, it tests for three python versions: 3.11, 3.12 and 3.13. Tests are run on every 
+push and every PR.
 
