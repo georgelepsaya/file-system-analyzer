@@ -1,5 +1,4 @@
 import os
-import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import List, Dict
@@ -11,19 +10,28 @@ from .utils import (
     detect_unusual_permissions,
     convert_size,
 )
+from ..logging_config import logger
 
+# optional dependency (python-magic)
 try:
     import magic
 except ImportError:
     magic = None
 
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("file_system_analyzer")
-
-
 @dataclass
 class FileMetadata:
+    """
+    Holds metadata for a file
+
+    Attributes:
+        path : os.PathLike
+            Path to the file
+        size : int
+            File size in bytes
+        permissions : int
+            Raw permission bits (mode)
+    """
     path: os.PathLike
     size: int
     permissions: int
@@ -43,6 +51,15 @@ class FileMetadata:
 
 @dataclass
 class CategoryFiles:
+    """
+    Container for all files of a category
+
+    Attributes:
+        size : int
+            Cumulative size of all files of the category
+        files : List[FileMetadata]
+            Collection of all individual files that belong to this category
+    """
     size: int = 0
     files: List[FileMetadata] = field(default_factory=list)
 
@@ -91,7 +108,7 @@ class FileSystemAnalyzer:
         """
         self.dir_path: os.PathLike = dir_path
         self.threshold: int = threshold
-        self._files_by_category = defaultdict(CategoryFiles)
+        self._files_by_category: Dict[str, CategoryFiles] = defaultdict(CategoryFiles)
         self._large_files = {}
         self._unusual_permissions_files = {}
         self._magic_available = magic is not None
@@ -122,11 +139,14 @@ class FileSystemAnalyzer:
         """
         Recursively traverses the directory and stored necessary metadata
         :param path: os.PathLike
+            Directory to be traversed
         :return: None
         """
         try:
             for entry in os.scandir(path):
+                # handle regular files
                 if entry.is_file():
+                    # skip symbolic links
                     if entry.is_symlink():
                         continue
 
@@ -137,19 +157,26 @@ class FileSystemAnalyzer:
 
                     file = FileMetadata(file_path, file_size, file_mode)
 
+                    # Track files with unusual permissions
                     if file.unusual_permissions:
                         self._unusual_permissions_files[file_path] = file.unusual_permissions
 
+                    # Track large files (size above threshold)
                     if file.size > self.threshold:
                         self._large_files[file_path] = file.converted_size
 
                     if self._magic_available:
+                        # if libmagic is available, use it to infer file type
                         inferred_type = infer_file_type_magic(file_path)
                     else:
+                        # if libmagic unavailable, use file extensions
                         inferred_type = infer_file_type_extension(file_path)
 
+                    # record size and files for the category
                     self._files_by_category[inferred_type].files.append(file)
                     self._files_by_category[inferred_type].size += file_size
+
+                # recursively scan subdirectories
                 else:
                     self._traverse_directory(entry.path)
         except PermissionError as pe:

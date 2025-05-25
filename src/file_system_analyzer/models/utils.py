@@ -51,7 +51,7 @@ def infer_file_type_magic(file_path: os.PathLike) -> str:
     :param file_path: os.PathLike
         Path to the file, type of which needs to be inferred
     :return: str
-        Type inferred using libmagic
+        Inferred type
     """
     try:
         import magic
@@ -61,6 +61,7 @@ def infer_file_type_magic(file_path: os.PathLike) -> str:
         if len(magic_type) < 1:
             raise ValueError(f"invalid MIME type: {mime_type}")
 
+        # return categories that match top-level MIME types
         if magic_type[0] == "text":
             return "text"
         elif magic_type[0] == "image":
@@ -69,12 +70,16 @@ def infer_file_type_magic(file_path: os.PathLike) -> str:
             return "audio"
         elif magic_type[0] == "video":
             return "video"
+        # handle the case with 'application' top-level type
         elif magic_type[0] == "application":
+            # attempt to map full MIME type to category
             if mime_type in APPLICATION_MIME_TO_CATEGORY:
                 return APPLICATION_MIME_TO_CATEGORY[mime_type]
             else:
+                # attempt to infer using raw magic descriptions
                 inferred_type = infer_file_type_magic_raw(file_path)
                 if inferred_type == "other":
+                    # finally attempt to infer type using file extension
                     return infer_file_type_extension(file_path)
                 return inferred_type
         return "other"
@@ -93,11 +98,20 @@ def infer_file_type_magic(file_path: os.PathLike) -> str:
 
 
 def infer_file_type_magic_raw(file_path: os.PathLike) -> str:
+    """
+    Infer file type using raw descriptions of libmagic
+    :param file_path: os.PathLike
+        Path to the file type of which is inferred
+    :return: str
+        Inferred type
+    """
     try:
         import magic
         magic_type_raw = magic.from_file(file_path)
+        # attempt to match generated description to compiled pattern of terms
         matched_term = TERM_PATTERN.search(magic_type_raw)
         if matched_term:
+            # if matched, return the category to which the term maps
             return TERM_TO_CATEGORY[matched_term.group(0).lower()]
         return "other"
     except ImportError as ie:
@@ -111,11 +125,20 @@ def infer_file_type_magic_raw(file_path: os.PathLike) -> str:
 
 
 def infer_file_type_extension(file_path: os.PathLike) -> str:
+    """
+    Infer file type using file extensions
+    :param file_path: os.PathLike
+        Path to the file, type of which is inferred
+    :return: str
+        Inferred type
+    """
     try:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"file {file_path} does not exist")
+        # obtain file's extension
         file_ext = os.path.splitext(file_path)[1]
         if file_ext in EXTENSION_TO_CATEGORY:
+            # if file extension is present in the mapping, return category to which it maps
             return EXTENSION_TO_CATEGORY[file_ext]
         return "other"
     except FileNotFoundError as fe:
@@ -127,6 +150,13 @@ def infer_file_type_extension(file_path: os.PathLike) -> str:
 
 
 def convert_size(file_size: int) -> str:
+    """
+    Convert size from bytes to string with a unit
+    :param file_size: int
+        File size in bytes
+    :return: str
+        File size as a string with a unit
+    """
     try:
         if not isinstance(file_size, int):
             raise ValueError("file size must be integer")
@@ -134,15 +164,21 @@ def convert_size(file_size: int) -> str:
             raise ValueError("file size must not be negative")
         if file_size == 0:
             return "0 B"
+
         base = 1024
         size_units = ("B", "KiB", "MiB", "GiB", "TiB", "PiB")
+
+        # determine a unit index based on the log. in case it's above the length of size_units
+        # take the last biggest one
         unit_index = min(int(math.floor(math.log(file_size, base))), len(size_units) - 1)
         divisor = base ** unit_index
         converted_size = file_size / divisor
 
         if converted_size.is_integer():
+            # if there are no digits after the floating point, return size as integer
             converted_size = int(converted_size)
         else:
+            # otherwise round to two digits after floating point
             converted_size = round(converted_size, 2)
 
         return f"{converted_size} {size_units[unit_index]}"
@@ -155,6 +191,13 @@ def convert_size(file_size: int) -> str:
 
 
 def detect_unusual_permissions(mode: int) -> List[str]:
+    """
+    Detect unusual permission based on the provided mode
+    :param mode: int
+        Permissions as in stat.st_mode
+    :return: List[str]
+        Collection of names of unusual permissions
+    """
     try:
         if not isinstance(mode, int):
             raise ValueError("mode must be integer")
