@@ -1,5 +1,7 @@
 # File System Analyzer
 
+![Tests are passing](https://github.com/georgelepsaya/file-system-analyzer/actions/workflows/tests.yaml/badge.svg)
+
 ## Motivation for chosen tools and approach
 
 1. **uv** for project and package management.
